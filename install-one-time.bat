@@ -12,4 +12,6 @@ REM Clone pyboy
 cd %externalDir%
 git submodule add https://github.com/Baekalfen/PyBoy.git
 
+echo "Completed Successfully"
+
 popd
