@@ -53,13 +53,14 @@ def ReleaseKey(hexKeyCode):
     x = Input( ctypes.c_ulong(1), ii_ )
     ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
-def Press(hexKeyCode):
+
+def Press(hexKeyCode, holdTimeInSec):
     PressKey(hexKeyCode)
-    time.sleep(0.3)
+    time.sleep(holdTimeInSec)
     ReleaseKey(hexKeyCode)
 
 
-hexCodesByName = {
+hex_codes_by_name = {
     # 'up' : 0xC8,
     # 'left' : 0xCB,
     # 'right' : 0xCD,
@@ -75,20 +76,37 @@ hexCodesByName = {
 }
 
 
+move_keys = [
+    'w',
+    'a',
+    's',
+    'd'
+]
+
+
 if __name__ == '__main__':
-    numKeys = len(hexCodesByName)
+    num_keys = len(hex_codes_by_name)
+    keys = hex_codes_by_name.keys()
 
     # Turn off numlock for arrow keys
     # num_lock_in_hex = 0x45
     # Press(num_lock_in_hex)
 
     while True:
-        # time.sleep(1)
+        # Choose a random key
+        random_index = random.randint(0, num_keys - 1)
+        key = keys[random_index]
 
-        random_index = random.randint(0, numKeys - 1)
-
-        key = hexCodesByName.keys()[random_index]
-        keyInHex = hexCodesByName[key]
-        print('Selected key: {0}. Hex: {1}'.format(key, keyInHex))
-        Press(keyInHex)
-
+        # Decide how long to hold down the key
+        hold_time_in_sec = 0.02
+        if key in move_keys:
+            # Hold down a random amount of time
+            hold_time_in_sec = random.random() * 3.0  # Up to 3 seconds
+        
+        # Press the key
+        key_in_hex = hex_codes_by_name[key]
+        print('Selected key: {0} ({1}) for {2:.2f} sec'.format(
+            key,
+            key_in_hex,
+            hold_time_in_sec))
+        Press(key_in_hex, hold_time_in_sec)
