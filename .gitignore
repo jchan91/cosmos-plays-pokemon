@@ -11,7 +11,6 @@ bin/
 obj/
 ipch/
 **/packages/
-**/TestResults
 
 # VS
 **/.vs
@@ -40,13 +39,8 @@ ipch/
 *.nupkg
 *.pyc
 
+# Meld
 *.orig
 
-# sqlProj files
-*dbmdl
-*jfm
-*.vspx
-
-# Training Data
-MNIST_data
-hotdog_data
+# ROMs
+*.sav
