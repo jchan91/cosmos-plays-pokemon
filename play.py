@@ -71,6 +71,7 @@ hex_codes_by_name = {
     'd' : 0x20,
     'x' : 0x2D,
     'z' : 0x2C,
+    'p': 0x19,
     'enter' : 0x1C,
     'back' : 0x0E
 }
@@ -82,6 +83,26 @@ move_keys = [
     's',
     'd'
 ]
+
+
+save_key = 'p'
+
+
+def SaveGame():
+    save_key_in_hex = hex_codes_by_name[save_key]
+    Press(save_key_in_hex, holdTimeInSec=0.1)
+
+
+current_iteration_since_last_save = 0
+def MaybeSaveGame():
+    iterations_per_save = 5
+    global current_iteration_since_last_save
+
+    current_iteration_since_last_save = current_iteration_since_last_save + 1
+    if current_iteration_since_last_save % iterations_per_save is 0:
+        SaveGame()
+        current_iteration_since_last_save = 0  # Reset the counter
+    print(current_iteration_since_last_save)
 
 
 if __name__ == '__main__':
@@ -110,3 +131,6 @@ if __name__ == '__main__':
             key_in_hex,
             hold_time_in_sec))
         Press(key_in_hex, hold_time_in_sec)
+
+        # Give the child a chance to save himself
+        MaybeSaveGame()
