@@ -1,6 +1,0 @@
-[submodule "external/PyBoy"]
-	path = external/PyBoy
-	url = https://github.com/Baekalfen/PyBoy.git
-[submodule "external/pyautogui"]
-	path = external/pyautogui
-	url = https://github.com/asweigart/pyautogui.git
