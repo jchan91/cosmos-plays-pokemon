@@ -95,14 +95,13 @@ def SaveGame():
 
 current_iteration_since_last_save = 0
 def MaybeSaveGame():
-    iterations_per_save = 5
+    iterations_per_save = 1000
     global current_iteration_since_last_save
 
     current_iteration_since_last_save = current_iteration_since_last_save + 1
     if current_iteration_since_last_save % iterations_per_save is 0:
         SaveGame()
         current_iteration_since_last_save = 0  # Reset the counter
-    print(current_iteration_since_last_save)
 
 
 if __name__ == '__main__':
@@ -119,10 +118,10 @@ if __name__ == '__main__':
         key = keys[random_index]
 
         # Decide how long to hold down the key
-        hold_time_in_sec = 0.02
+        hold_time_in_sec = 0.1
         if key in move_keys:
             # Hold down a random amount of time
-            hold_time_in_sec = random.random() * 3.0  # Up to 3 seconds
+            hold_time_in_sec = random.random() * 1.0  # Up to 1 seconds
         
         # Press the key
         key_in_hex = hex_codes_by_name[key]
