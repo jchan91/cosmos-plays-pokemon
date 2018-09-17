@@ -124,8 +124,6 @@ def MaybeSaveGame():
         SaveGame()
         current_iteration_since_last_save = 0  # Reset the counter
 
-    print(current_iteration_since_last_save)
-
 
 if __name__ == '__main__':
     keys = hex_codes_by_name.keys()
