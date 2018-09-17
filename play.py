@@ -77,6 +77,17 @@ hex_codes_by_name = {
 }
 
 
+action_keys = [
+    'w',
+    'a',
+    's',
+    'd',
+    'x',
+    'z',
+    'enter'
+]
+
+
 move_keys = [
     'w',
     'a',
@@ -85,7 +96,17 @@ move_keys = [
 ]
 
 
+start_key = 'enter'
+
+
 save_key = 'p'
+
+
+def ChooseRandomActionKey():
+    num_keys = len(action_keys)
+    random_index = random.randint(0, num_keys - 1)
+    key = action_keys[random_index]
+    return key
 
 
 def SaveGame():
@@ -103,9 +124,10 @@ def MaybeSaveGame():
         SaveGame()
         current_iteration_since_last_save = 0  # Reset the counter
 
+    print(current_iteration_since_last_save)
+
 
 if __name__ == '__main__':
-    num_keys = len(hex_codes_by_name)
     keys = hex_codes_by_name.keys()
 
     # Turn off numlock for arrow keys
@@ -114,14 +136,21 @@ if __name__ == '__main__':
 
     while True:
         # Choose a random key
-        random_index = random.randint(0, num_keys - 1)
-        key = keys[random_index]
+        key = ChooseRandomActionKey()
 
         # Decide how long to hold down the key
         hold_time_in_sec = 0.1
         if key in move_keys:
             # Hold down a random amount of time
             hold_time_in_sec = random.random() * 1.0  # Up to 1 seconds
+        
+        if key is start_key:
+            # Have some probability of keeping the start key
+            random_i = random.random()  # Gives me a number from [0,1]
+            probability_to_keep_start_key = 0.5
+            if random_i > probability_to_keep_start_key:
+                # Don't keep this start key
+                key = ChooseRandomActionKey()
         
         # Press the key
         key_in_hex = hex_codes_by_name[key]
