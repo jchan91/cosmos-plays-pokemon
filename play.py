@@ -95,6 +95,16 @@ move_keys = [
     'd'
 ]
 
+vertical_keys = [
+    'w',
+    's'
+]
+
+horizontal_keys = [
+    'a',
+    'd'
+]
+
 
 start_key = 'enter'
 
@@ -109,11 +119,12 @@ def ChooseRandomActionKey():
     return key
 
 
-current_biased_direction = 'w'
+current_biased_vertical_direction = 'w'
+current_biased_horizontal_direction = 'a'
 def MaybeChangeKey(current_direction):
-    if current_biased_direction != current_direction:
+    if current_biased_vertical_direction is not current_direction or current_biased_horizontal_direction is not current_direction:
         # Possibly choose a new direction
-        choose_again_probability = 0.75
+        choose_again_probability = 1
         p = random.random()
         if p <= choose_again_probability:
             return ChooseRandomActionKey()
@@ -143,16 +154,21 @@ def MaybeSaveGame():
 current_iteration_since_last_choosing_of_direction = 0
 def MaybeChooseRandomDirection():
     global current_iteration_since_last_choosing_of_direction
-    global current_biased_direction
-    iterations_per_choosing_direction = 100
+    global current_biased_vertical_direction
+    global current_biased_horizontal_direction
+    iterations_per_choosing_direction = 10000
 
     current_iteration_since_last_choosing_of_direction = current_iteration_since_last_choosing_of_direction + 1
     if current_iteration_since_last_choosing_of_direction % iterations_per_choosing_direction is 0:
-        num_keys = len(move_keys)
+        num_keys = 2
         random_index = random.randint(0, num_keys - 1)
-        current_biased_direction = move_keys[random_index]
+        current_biased_vertical_direction = vertical_keys[random_index]
+        random_index = random.randint(0, num_keys - 1)
+        current_biased_horizontal_direction = horizontal_keys[random_index]
         current_iteration_since_last_choosing_of_direction = 0
-        print('Chose {0} direction'.format(current_biased_direction))
+        print('Chose ({0}, {1}) direction'.format(
+            current_biased_vertical_direction,
+            current_biased_horizontal_direction))
 
 
 if __name__ == '__main__':
@@ -167,7 +183,7 @@ if __name__ == '__main__':
         key = ChooseRandomActionKey()
 
         # Decide how long to hold down the key
-        hold_time_in_sec = 0.05
+        hold_time_in_sec = 0.001
         if key in move_keys:
             # First decide whether to keep it
             key = MaybeChangeKey(key)
@@ -175,7 +191,7 @@ if __name__ == '__main__':
         # Check if possibly modified key is the new key
         if key in move_keys:
             # Hold down a random amount of time
-            hold_time_in_sec = random.random() * 0.1  # Up to 0.1 seconds
+            hold_time_in_sec = random.random() * 0.025  # Up to 0.1 seconds
         
         if key is start_key:
             # Have some probability of keeping the start key
@@ -187,10 +203,12 @@ if __name__ == '__main__':
         
         # Press the key
         key_in_hex = hex_codes_by_name[key]
-        print('Selected key: {0} ({1}) for {2:.2f} sec'.format(
+        print('[{3}, {4}] Selected key: {0} ({1}) for {2:.2f} sec'.format(
             key,
             key_in_hex,
-            hold_time_in_sec))
+            hold_time_in_sec,
+            current_biased_vertical_direction,
+            current_biased_horizontal_direction))
         Press(key_in_hex, hold_time_in_sec)
 
         # Give the child a chance to save himself
