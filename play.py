@@ -167,7 +167,7 @@ if __name__ == '__main__':
         key = ChooseRandomActionKey()
 
         # Decide how long to hold down the key
-        hold_time_in_sec = 0.1
+        hold_time_in_sec = 0.05
         if key in move_keys:
             # First decide whether to keep it
             key = MaybeChangeKey(key)
@@ -175,7 +175,7 @@ if __name__ == '__main__':
         # Check if possibly modified key is the new key
         if key in move_keys:
             # Hold down a random amount of time
-            hold_time_in_sec = random.random() * 1.0  # Up to 1 seconds
+            hold_time_in_sec = random.random() * 0.1  # Up to 0.1 seconds
         
         if key is start_key:
             # Have some probability of keeping the start key
