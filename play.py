@@ -109,6 +109,21 @@ def ChooseRandomActionKey():
     return key
 
 
+current_biased_direction = 'w'
+def MaybeChangeKey(current_direction):
+    if current_biased_direction != current_direction:
+        # Possibly choose a new direction
+        choose_again_probability = 0.75
+        p = random.random()
+        if p <= choose_again_probability:
+            return ChooseRandomActionKey()
+        else:
+            return current_direction
+    else:
+        # Keep current direction
+        return current_direction
+
+
 def SaveGame():
     save_key_in_hex = hex_codes_by_name[save_key]
     Press(save_key_in_hex, holdTimeInSec=0.1)
@@ -125,6 +140,21 @@ def MaybeSaveGame():
         current_iteration_since_last_save = 0  # Reset the counter
 
 
+current_iteration_since_last_choosing_of_direction = 0
+def MaybeChooseRandomDirection():
+    global current_iteration_since_last_choosing_of_direction
+    global current_biased_direction
+    iterations_per_choosing_direction = 100
+
+    current_iteration_since_last_choosing_of_direction = current_iteration_since_last_choosing_of_direction + 1
+    if current_iteration_since_last_choosing_of_direction % iterations_per_choosing_direction is 0:
+        num_keys = len(move_keys)
+        random_index = random.randint(0, num_keys - 1)
+        current_biased_direction = move_keys[random_index]
+        current_iteration_since_last_choosing_of_direction = 0
+        print('Chose {0} direction'.format(current_biased_direction))
+
+
 if __name__ == '__main__':
     keys = hex_codes_by_name.keys()
 
@@ -138,6 +168,11 @@ if __name__ == '__main__':
 
         # Decide how long to hold down the key
         hold_time_in_sec = 0.1
+        if key in move_keys:
+            # First decide whether to keep it
+            key = MaybeChangeKey(key)
+
+        # Check if possibly modified key is the new key
         if key in move_keys:
             # Hold down a random amount of time
             hold_time_in_sec = random.random() * 1.0  # Up to 1 seconds
@@ -160,3 +195,6 @@ if __name__ == '__main__':
 
         # Give the child a chance to save himself
         MaybeSaveGame()
+
+        # Choose a new biased direction
+        MaybeChooseRandomDirection()
