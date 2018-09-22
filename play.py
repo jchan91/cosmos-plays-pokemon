@@ -1,6 +1,7 @@
 import time
 import random
 import ctypes
+import numpy as np
 
 
 SendInput = ctypes.windll.user32.SendInput
@@ -112,22 +113,109 @@ start_key = 'enter'
 save_key = 'p'
 
 
-def ChooseRandomActionKey():
-    num_keys = len(action_keys)
-    random_index = random.randint(0, num_keys - 1)
-    key = action_keys[random_index]
-    return key
+class StateMachine:
+    _current_state = 'w'
+    _transition_table = None
+    _key_to_index = {}
+
+    
+    def __init__(self):
+        num_keys = len(action_keys)
+        self._transition_table = np.zeros(shape=(num_keys, num_keys))
+
+        # Setup a key -> index dictionary
+        for i in range(0, num_keys):
+            key = action_keys[i]
+            self._key_to_index[key] = i
+        
+        # Set all transitions to be the same, regardless of current state
+        for from_state in action_keys:
+            self._set_transition(from_state, 'w', 1.0)
+            self._set_transition(from_state, 'a', 1.0)
+            self._set_transition(from_state, 's', 1.0)
+            self._set_transition(from_state, 'd', 1.0)
+            self._set_transition(from_state, 'x', 1.0)
+            self._set_transition(from_state, 'z', 1.0)
+            self._set_transition(from_state, 'enter', 1.0)
+        
+        # Normalize table so for a given from_state, all next_state_probabilities sum to 1.0
+        self._normalize_transition_table()
+
+
+    def get_current_state(self):
+        return self._current_state
+
+
+    def choose_next_state(self):
+        transition_probabilities = self._get_transition_probabilities_for_current_state()
+        transition_probability_cdf = self._cdf(transition_probabilities)
+
+        random_draw = random.random()
+        num_transitions = len(transition_probabilities)
+        for i in range(0, num_transitions):
+            transition_cdf_value = transition_probability_cdf[i]
+            if random_draw < transition_cdf_value:
+                # Found chosen key
+                self._current_state = action_keys[i]
+                return
+            else:
+                # Keep searching up the CDF
+                continue
+
+
+    def _set_transition(self, from_state, to_state, value):
+        from_idx = self._key_to_index[from_state]
+        to_idx = self._key_to_index[to_state]
+        self._transition_table[from_idx, to_idx] = value
+    
+
+    def _normalize_transition_table(self):
+        num_rows = self._transition_table.shape[0]
+        for row in range(0, num_rows):
+            transition_values = self._transition_table[row]
+            self._transition_table[row] = self._transition_table[row] / np.sum(transition_values)
+
+
+    @staticmethod
+    def _cdf(pdf_array):
+        num_elems = len(pdf_array)
+        cdf_array = np.zeros(num_elems)
+        accumulation = 0.0
+        for i in range(0, num_elems):
+            p = pdf_array[i]
+            accumulation = accumulation + p
+            cdf_array[i] = accumulation
+
+        # Normalize cdf_array to [0,1]
+        cdf_array = cdf_array / accumulation
+        return cdf_array
+
+
+    def _get_transition_probabilities_for_current_state(self):
+        current_idx = self._key_to_index[self._current_state]
+        return self._transition_table[current_idx]
+
+
+    def _get_transition_probability_by_index(self, to_state_index):
+        current_idx = self._key_to_index[self._current_state]
+        return self._transition_table[current_idx, to_state_index]
+
+
+state_machine = StateMachine()
+def choose_random_action_key():
+    state_machine.choose_next_state()
+    return state_machine.get_current_state()
 
 
 current_biased_vertical_direction = 'w'
 current_biased_horizontal_direction = 'a'
-def MaybeChangeKey(current_direction):
+def maybe_change_key(current_direction):
     if current_biased_vertical_direction is not current_direction or current_biased_horizontal_direction is not current_direction:
         # Possibly choose a new direction
         choose_again_probability = 1
         p = random.random()
         if p <= choose_again_probability:
-            return ChooseRandomActionKey()
+            return choose_random_action_key()
         else:
             return current_direction
     else:
@@ -135,24 +223,24 @@ def MaybeChangeKey(current_direction):
         return current_direction
 
 
-def SaveGame():
+def save_game():
     save_key_in_hex = hex_codes_by_name[save_key]
     Press(save_key_in_hex, holdTimeInSec=0.1)
 
 
 current_iteration_since_last_save = 0
-def MaybeSaveGame():
+def maybe_save_game():
     iterations_per_save = 1000
     global current_iteration_since_last_save
 
     current_iteration_since_last_save = current_iteration_since_last_save + 1
     if current_iteration_since_last_save % iterations_per_save is 0:
-        SaveGame()
+        save_game()
         current_iteration_since_last_save = 0  # Reset the counter
 
 
 current_iteration_since_last_choosing_of_direction = 0
-def MaybeChooseRandomDirection():
+def maybe_choose_random_direction():
     global current_iteration_since_last_choosing_of_direction
     global current_biased_vertical_direction
     global current_biased_horizontal_direction
@@ -172,34 +260,16 @@ def MaybeChooseRandomDirection():
 
 
 if __name__ == '__main__':
-    keys = hex_codes_by_name.keys()
-
-    # Turn off numlock for arrow keys
-    # num_lock_in_hex = 0x45
-    # Press(num_lock_in_hex)
-
     while True:
         # Choose a random key
-        key = ChooseRandomActionKey()
+        key = choose_random_action_key()
 
         # Decide how long to hold down the key
         hold_time_in_sec = 0.001
-        if key in move_keys:
-            # First decide whether to keep it
-            key = MaybeChangeKey(key)
-
         # Check if possibly modified key is the new key
         if key in move_keys:
             # Hold down a random amount of time
             hold_time_in_sec = random.random() * 0.025  # Up to 0.1 seconds
-        
-        if key is start_key:
-            # Have some probability of keeping the start key
-            random_i = random.random()  # Gives me a number from [0,1]
-            probability_to_keep_start_key = 0.5
-            if random_i > probability_to_keep_start_key:
-                # Don't keep this start key
-                key = ChooseRandomActionKey()
         
         # Press the key
         key_in_hex = hex_codes_by_name[key]
@@ -212,7 +282,7 @@ if __name__ == '__main__':
         Press(key_in_hex, hold_time_in_sec)
 
         # Give the child a chance to save himself
-        MaybeSaveGame()
+        maybe_save_game()
 
         # Choose a new biased direction
-        MaybeChooseRandomDirection()
+        maybe_choose_random_direction()
