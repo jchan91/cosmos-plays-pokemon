@@ -135,16 +135,16 @@ class StateMachine:
 
         # Set all transitions to be the same, regardless of current state
         for from_state in action_keys:
-            self._set_transition(from_state, 'w', 1.0)
-            self._set_transition(from_state, 'a', 1.0)
-            self._set_transition(from_state, 's', 1.0)
-            self._set_transition(from_state, 'd', 1.0)
-            self._set_transition(from_state, 'x', 1.0)
-            self._set_transition(from_state, 'z', 1.0)
-            self._set_transition(from_state, 'enter', 0.1)
+            self.set_transition(from_state, 'w', 1.0)
+            self.set_transition(from_state, 'a', 1.0)
+            self.set_transition(from_state, 's', 1.0)
+            self.set_transition(from_state, 'd', 1.0)
+            self.set_transition(from_state, 'x', 1.0)
+            self.set_transition(from_state, 'z', 1.0)
+            self.set_transition(from_state, 'enter', 0.1)
         
         # Normalize table so for a given from_state, all next_state_probabilities sum to 1.0
-        self._normalize_transition_table()
+        self.normalize_transition_table()
 
 
     def get_current_state(self):
@@ -179,13 +179,13 @@ class StateMachine:
         return summary
 
 
-    def _set_transition(self, from_state, to_state, value):
+    def set_transition(self, from_state, to_state, value):
         from_idx = self._key_to_index[from_state]
         to_idx = self._key_to_index[to_state]
         self._transition_table[from_idx, to_idx] = value
     
 
-    def _normalize_transition_table(self):
+    def normalize_transition_table(self):
         num_rows = self._transition_table.shape[0]
         for row in range(0, num_rows):
             transition_values = self._transition_table[row]
@@ -255,6 +255,24 @@ def maybe_change_key(current_direction):
         return current_direction
 
 
+def set_state_machine_bias_direction(state_machine):
+    for from_state in action_keys:
+        for to_state in action_keys:
+            if to_state is current_biased_vertical_direction or to_state is current_biased_horizontal_direction:
+                # Set biased direction probabilities
+                state_machine.set_transition(from_state, to_state, 5.0)
+            elif to_state in move_keys:
+                # Set other move key probabilities
+                state_machine.set_transition(from_state, to_state, 0.5)
+            else:
+                # Set other keys
+                state_machine.set_transition(from_state, to_state, 1.0)
+            state_machine.set_transition(from_state, 'enter', 0.1)
+
+    # Normalize the transition tables after setting new probabilities
+    state_machine.normalize_transition_table()
+
+
 current_iteration_since_last_choosing_of_direction = 0
 def maybe_choose_bias_direction():
     global current_iteration_since_last_choosing_of_direction
@@ -262,17 +280,24 @@ def maybe_choose_bias_direction():
     global current_biased_horizontal_direction
     iterations_per_choosing_direction = 10000
 
-    current_iteration_since_last_choosing_of_direction = current_iteration_since_last_choosing_of_direction + 1
     if current_iteration_since_last_choosing_of_direction % iterations_per_choosing_direction is 0:
+        # Choose a new direction bias
         num_keys = 2
+        # Choose a vertical bias
         random_index = random.randint(0, num_keys - 1)
         current_biased_vertical_direction = vertical_keys[random_index]
+        # Choose a horizontal bias
         random_index = random.randint(0, num_keys - 1)
         current_biased_horizontal_direction = horizontal_keys[random_index]
+        # Reset counter
         current_iteration_since_last_choosing_of_direction = 0
+        # Increase state machine probabilities for these biased directions
+        set_state_machine_bias_direction(state_machine)
         print('Chose ({0}, {1}) direction'.format(
             current_biased_vertical_direction,
             current_biased_horizontal_direction))
+
+    current_iteration_since_last_choosing_of_direction = current_iteration_since_last_choosing_of_direction + 1    
 
 
 if __name__ == '__main__':
