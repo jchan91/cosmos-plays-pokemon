@@ -131,7 +131,7 @@ class StateMachine:
 
         # Setup a debugging table of statistics of chosen states
         for key in action_keys:
-            self._state_statistics[key] = 0L
+            self._state_statistics[key] = 0
 
         # Set all transitions to be the same, regardless of current state
         for from_state in action_keys:
@@ -174,7 +174,7 @@ class StateMachine:
 
     def get_statistics_summary(self):
         summary = ''
-        for key, stat in self._state_statistics.iteritems():
+        for key, stat in self._state_statistics.items():
             summary += '{0}: {1}, '.format(key, stat)
         return summary
 
