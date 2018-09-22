@@ -117,6 +117,7 @@ class StateMachine:
     _current_state = 'w'
     _transition_table = None
     _key_to_index = {}
+    _state_statistics = {}
 
     
     def __init__(self):
@@ -127,7 +128,11 @@ class StateMachine:
         for i in range(0, num_keys):
             key = action_keys[i]
             self._key_to_index[key] = i
-        
+
+        # Setup a debugging table of statistics of chosen states
+        for key in action_keys:
+            self._state_statistics[key] = 0L
+
         # Set all transitions to be the same, regardless of current state
         for from_state in action_keys:
             self._set_transition(from_state, 'w', 1.0)
@@ -136,7 +141,7 @@ class StateMachine:
             self._set_transition(from_state, 'd', 1.0)
             self._set_transition(from_state, 'x', 1.0)
             self._set_transition(from_state, 'z', 1.0)
-            self._set_transition(from_state, 'enter', 1.0)
+            self._set_transition(from_state, 'enter', 0.1)
         
         # Normalize table so for a given from_state, all next_state_probabilities sum to 1.0
         self._normalize_transition_table()
@@ -156,11 +161,22 @@ class StateMachine:
             transition_cdf_value = transition_probability_cdf[i]
             if random_draw < transition_cdf_value:
                 # Found chosen key
-                self._current_state = action_keys[i]
+                chosen_state = action_keys[i]
+                self._current_state = chosen_state
+
+                # Accumulate some statistics
+                self._state_statistics[chosen_state] = self._state_statistics[chosen_state] + 1
                 return
             else:
                 # Keep searching up the CDF
                 continue
+
+
+    def get_statistics_summary(self):
+        summary = ''
+        for key, stat in self._state_statistics.iteritems():
+            summary += '{0}: {1}, '.format(key, stat)
+        return summary
 
 
     def _set_transition(self, from_state, to_state, value):
@@ -207,22 +223,6 @@ def choose_random_action_key():
     return state_machine.get_current_state()
 
 
-current_biased_vertical_direction = 'w'
-current_biased_horizontal_direction = 'a'
-def maybe_change_key(current_direction):
-    if current_biased_vertical_direction is not current_direction or current_biased_horizontal_direction is not current_direction:
-        # Possibly choose a new direction
-        choose_again_probability = 1
-        p = random.random()
-        if p <= choose_again_probability:
-            return choose_random_action_key()
-        else:
-            return current_direction
-    else:
-        # Keep current direction
-        return current_direction
-
-
 def save_game():
     save_key_in_hex = hex_codes_by_name[save_key]
     Press(save_key_in_hex, holdTimeInSec=0.1)
@@ -239,8 +239,24 @@ def maybe_save_game():
         current_iteration_since_last_save = 0  # Reset the counter
 
 
+current_biased_vertical_direction = 'w'
+current_biased_horizontal_direction = 'a'
+def maybe_change_key(current_direction):
+    if current_biased_vertical_direction is not current_direction or current_biased_horizontal_direction is not current_direction:
+        # Possibly choose a new direction
+        choose_again_probability = 1
+        p = random.random()
+        if p <= choose_again_probability:
+            return choose_random_action_key()
+        else:
+            return current_direction
+    else:
+        # Keep current direction
+        return current_direction
+
+
 current_iteration_since_last_choosing_of_direction = 0
-def maybe_choose_random_direction():
+def maybe_choose_bias_direction():
     global current_iteration_since_last_choosing_of_direction
     global current_biased_vertical_direction
     global current_biased_horizontal_direction
@@ -265,24 +281,24 @@ if __name__ == '__main__':
         key = choose_random_action_key()
 
         # Decide how long to hold down the key
-        hold_time_in_sec = 0.001
+        hold_time_in_sec = 0.025
         # Check if possibly modified key is the new key
         if key in move_keys:
             # Hold down a random amount of time
-            hold_time_in_sec = random.random() * 0.025  # Up to 0.1 seconds
+            hold_time_in_sec = random.random() * 0.1  # Up to 0.1 seconds
         
         # Press the key
         key_in_hex = hex_codes_by_name[key]
-        print('[{3}, {4}] Selected key: {0} ({1}) for {2:.2f} sec'.format(
-            key,
-            key_in_hex,
+        print('[{2}, {3}] Selected key: {0} for {1:.2f} sec. Stats: {4}'.format(
+            key[0],
             hold_time_in_sec,
             current_biased_vertical_direction,
-            current_biased_horizontal_direction))
+            current_biased_horizontal_direction,
+            state_machine.get_statistics_summary()))
         Press(key_in_hex, hold_time_in_sec)
 
         # Give the child a chance to save himself
         maybe_save_game()
 
         # Choose a new biased direction
-        maybe_choose_random_direction()
+        maybe_choose_bias_direction()
