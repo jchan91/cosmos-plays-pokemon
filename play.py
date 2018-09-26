@@ -263,7 +263,7 @@ def set_state_machine_bias_direction(state_machine):
                 state_machine.set_transition(from_state, to_state, 5.0)
             elif to_state in move_keys:
                 # Set other move key probabilities
-                state_machine.set_transition(from_state, to_state, 0.5)
+                state_machine.set_transition(from_state, to_state, 2.0)
             else:
                 # Set other keys
                 state_machine.set_transition(from_state, to_state, 1.0)
