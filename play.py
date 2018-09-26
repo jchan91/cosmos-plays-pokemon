@@ -301,16 +301,22 @@ def maybe_choose_bias_direction():
 
 
 if __name__ == '__main__':
+    turbo_mode = False
     while True:
         # Choose a random key
         key = choose_random_action_key()
 
         # Decide how long to hold down the key
         hold_time_in_sec = 0.025
+        if not turbo_mode:
+            hold_time_in_sec = 0.25
         # Check if possibly modified key is the new key
         if key in move_keys:
             # Hold down a random amount of time
-            hold_time_in_sec = random.random() * 0.1  # Up to 0.1 seconds
+            max_move_time = 0.1
+            if not turbo_mode:
+                max_move_time = 1.0
+            hold_time_in_sec = random.random() * max_move_time
         
         # Press the key
         key_in_hex = hex_codes_by_name[key]
